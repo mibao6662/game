@@ -226,12 +226,14 @@
         // 冒险日志打印
         function log(msg, color = '#a0baa0') {
             const consoleBox = document.getElementById('console-log');
-            const item = document.createElement('div');
-            item.style.color = color;
-            item.style.marginBottom = '4px';
-            item.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
-            consoleBox.appendChild(item);
-            consoleBox.scrollTop = consoleBox.scrollHeight;
+            if (consoleBox) {
+                const item = document.createElement('div');
+                item.style.color = color;
+                item.style.marginBottom = '4px';
+                item.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+                consoleBox.appendChild(item);
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+            }
         }
 
         // 核心游戏角色状态
@@ -309,7 +311,7 @@
             updateUI();
         }
 
-        // 启动游戏入口（为了满足浏览器对Web Audio的安全政策，必须由用户点击按钮触发）
+        // 启动游戏入口
         function startGame() {
             playSound('click');
             log("你踏入了迷雾森林保护区。冒险正式开始！", '#81c784');
@@ -352,8 +354,8 @@
             四周弥漫着粘稠的绿雾，泥潭中泛着气泡，四周不时传来低劣怪物的异动。
             在沼泽中探索可能寻找到草药，但也随时可能遭遇怪物。`;
             const choices = [
-                { text: "⚔️ 在沼泽中搜寻怪物 (进行刷怪练级)", action: () => patrolSwamp(); },
-                { text: "🌿 寻找散落的沼泽草药", action: () => searchSwampHerbs(); },
+                { text: "⚔️ 在沼泽中搜寻怪物 (进行刷怪练级)", action: () => { patrolSwamp(); } },
+                { text: "🌿 寻找散落的沼泽草药", action: () => { searchSwampHerbs(); } },
                 { text: "🚶 返回安全营地", action: () => { playSound('click'); showCamp(); } }
             ];
             render(text, choices);
@@ -363,9 +365,9 @@
             playSound('click');
             const rand = Math.random();
             if (rand < 0.5) {
-                startBattle("沼泽粘液史莱姆", 35, 6, 25, 10, () => showSwamp());
+                startBattle("沼泽粘液史莱姆", 35, 6, 25, 10, () => { showSwamp(); });
             } else {
-                startBattle("剧毒哥布林盗贼", 45, 9, 40, 18, () => showSwamp());
+                startBattle("剧毒哥布林盗贼", 45, 9, 40, 18, () => { showSwamp(); });
             }
         }
 
@@ -383,7 +385,7 @@
                 log("你在沼泽里踩空滑入泥潭，还不小心惊动了潜伏的怪物！", '#e57373');
                 damagePlayer(10, "泥潭陷阱");
                 if (player.hp > 0) {
-                    startBattle("泥潭巨鳄", 55, 11, 50, 25, () => showSwamp());
+                    startBattle("泥潭巨鳄", 55, 11, 50, 25, () => { showSwamp(); });
                 }
                 return;
             }
@@ -396,8 +398,8 @@
             斑驳的石门半掩，残垣断壁上刻着早已风化的古老祭文。
             废墟深处的密室可能藏有开启神庙侧室的钥匙，但也游荡着不死的骸骨守卫。`;
             const choices = [
-                { text: "⚔️ 探索石壁回廊 (挑战骸骨守卫)", action: () => patrolRuins(); },
-                { text: "🧩 解开中央遗迹石壁的谜题", action: () => solvePuzzle(); },
+                { text: "⚔️ 探索石壁回廊 (挑战骸骨守卫)", action: () => { patrolRuins(); } },
+                { text: "🧩 解开中央遗迹石壁的谜题", action: () => { solvePuzzle(); } },
                 { text: "🚶 返回安全营地", action: () => { playSound('click'); showCamp(); } }
             ];
             render(text, choices);
@@ -419,7 +421,7 @@
             playSound('click');
             if (player.puzzleSolved) {
                 const text = `🏛️ 【遗迹大厅 - 谜题已解开】\n你已经破解了这里的智慧试炼，石壁上亮着淡紫色的光辉。`;
-                const choices = [{ text: "返回遗迹入口", action: () => showRuins() }];
+                const choices = [{ text: "返回遗迹入口", action: () => { showRuins(); } }];
                 render(text, choices);
                 return;
             }
@@ -440,7 +442,7 @@
                     damagePlayer(15, "机关雷击");
                     if (player.hp > 0) showRuins();
                 }},
-                { text: "🚶 放弃解密，离开", action: () => showRuins() }
+                { text: "🚶 放弃解密，离开", action: () => { showRuins(); } }
             ];
             render(text, choices);
         }
@@ -453,12 +455,12 @@
             const choices = [];
 
             if (!player.inventory.includes("钢制大剑")) {
-                choices.push({ text: "⚔️ 购买【钢制大剑】 (提升12点攻击力) - 价格：35金币", action: () => buyItem("钢制大剑", 35, 'atk', 12) });
+                choices.push({ text: "⚔️ 购买【钢制大剑】 (提升12点攻击力) - 价格：35金币", action: () => { buyItem("钢制大剑", 35, 'atk', 12); } });
             }
             if (!player.inventory.includes("精铁重盾")) {
-                choices.push({ text: "🛡️ 购买【精铁重盾】 (提升6点防御力) - 价格：30金币", action: () => buyItem("精铁重盾", 30, 'def', 6) });
+                choices.push({ text: "🛡️ 购买【精铁重盾】 (提升6点防御力) - 价格：30金币", action: () => { buyItem("精铁重盾", 30, 'def', 6); } });
             }
-            choices.push({ text: "🧪 购买【疗伤药水】 (购买后立即可用作战斗恢复) - 价格：15金币", action: () => buyPotion() });
+            choices.push({ text: "🧪 购买【疗伤药水】 (购买后立即可用作战斗恢复) - 价格：15金币", action: () => { buyPotion(); } });
             choices.push({ text: "🚶 离开商店", action: () => { playSound('click'); showCamp(); } });
 
             render(text, choices);
@@ -552,9 +554,9 @@
                 // 2. 怪物回合阶段
                 let enemyDmg = Math.floor(combat.enemyAtk * (0.8 + Math.random() * 0.4));
                 if (combat.isBlocking) {
-                    // 战术格挡：伤害减半，且怪物受到固定5点反伤
+                    // 战术格挡：伤害减半，且怪物受到固定8点反伤
                     let reducedDmg = Math.max(1, Math.floor((enemyDmg - getDef()) / 2));
-                    logMsg += `🛡️ 格挡成功！你仅受到了 ${reducedDmg} 点震击伤害。并且巨力的盾牌冲击对怪物造成 8 点防守反伤！\n`;
+                    logMsg += `🛡️ 格挡成功！你仅受到了 ${reducedDmg} 点伤。防守反击对怪物造成 8 点反伤！\n`;
                     player.hp -= reducedDmg;
                     combat.enemyHp -= 8;
                     combat.isBlocking = false;
@@ -570,14 +572,14 @@
                     }
                 } else {
                     let actualDmg = Math.max(1, enemyDmg - getDef());
-                    logMsg += `👾 【${combat.enemyName}】扑过来朝你施展攻击，造成 ${actualDmg} 点伤害。\n`;
+                    logMsg += `👾 【${combat.enemyName}】发起攻击，对你造成 ${actualDmg} 点伤害。\n`;
                     player.hp -= actualDmg;
                     playSound('hit');
                 }
 
                 // 再次检查玩家是否死亡
                 if (player.hp <= 0) {
-                    log(`💀 你在和【${combat.enemyName}】的惨烈搏杀中支撑不住，倒地而亡。`, '#ff5252');
+                    log(`💀 你在和【${combat.enemyName}】的惨烈搏杀中撑不住，倒地而亡。`, '#ff5252');
                     gameOver();
                     return;
                 }
@@ -594,13 +596,13 @@
             ${logMsg || "战斗已经爆发，请迅速采取你的战术抉择！"}`;
 
             const choices = [
-                { text: "⚔️ 普通攻击 (投掷百分之15的暴击率)", action: () => runCombatTurn(false, 'attack') },
-                { text: "🛡️ 战术格挡 (承受伤害减半，且造成固定8点盾牌反伤)", action: () => runCombatTurn(false, 'block') }
+                { text: "⚔️ 普通攻击 (投掷百分之15的暴击率)", action: () => { runCombatTurn(false, 'attack'); } },
+                { text: "🛡️ 战术格挡 (承受伤害减半，且造成固定8点盾牌反伤)", action: () => { runCombatTurn(false, 'block'); } }
             ];
 
             // 检查是否有药水可用
             if (player.inventory.includes("疗伤药水")) {
-                choices.push({ text: "🧪 服用背包中的【疗伤药水】 (+50生命值)", action: () => runCombatTurn(false, 'potion') });
+                choices.push({ text: "🧪 服用背包中的【疗伤药水】 (+50生命值)", action: () => { runCombatTurn(false, 'potion'); } });
             }
 
             render(screenText, choices, true);
@@ -615,11 +617,11 @@
             ⚠️ 警告：一旦开启战斗，只有你或者巨兽一方死掉，决斗才会结束！`;
 
             const choices = [
-                { text: "⚔️ 拔出武器，发起决战！", action: () => startBossFight() }
+                { text: "⚔️ 拔出武器，发起决战！", action: () => { startBossFight(); } }
             ];
 
             if (player.inventory.includes("神秘钥匙")) {
-                choices.push({ text: "🔑 使用废墟中得到的【神秘钥匙】企图暗度陈仓", action: () => bypassBoss() });
+                choices.push({ text: "🔑 使用废墟中得到的【神秘钥匙】企图暗度陈仓", action: () => { bypassBoss(); } });
             }
 
             choices.push({ text: "🚶 还没准备好，先撤退", action: () => { playSound('click'); showCamp(); } });
@@ -629,7 +631,6 @@
 
         function startBossFight() {
             playSound('click');
-            // 三头犬数值极其凶悍：HP 180, 攻击 22
             startBattle("地狱三头魔犬 (领主级BOSS)", 180, 22, 1000, 200, () => {
                 showVictory();
             });
@@ -639,7 +640,7 @@
             playSound('heal');
             log("🔑 你将神秘钥匙插入了主殿一侧隐藏的小神龛中，地面的暗门悄然翻开。", '#81c784');
             const text = `🎉 【智取圣物：悄然逃脱】
-            你通过狭窄的地下密道无声无息地绕过了狂怒咆哮的三头魔犬，将祭坛正中央沉睡的黄金圣物揽入怀中，并在它发觉之前顺着密道顺利撤离！
+            你通过狭窄的地下密道无声无息地绕过了狂怒咆哮的三头魔犬，将祭坛正中央沉睡的黄金圣物黄金圣徽揽入怀中，并在它发觉之前顺着密道顺利撤离！
             
             你没有耗费一丝体力，便安全带回了行会失落已久的国宝。`;
             const choices = [{ text: "🎮 重新开启新的一轮挑战", action: () => { playSound('click'); showNode('restart'); } }];
