@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>迷失森林：失落的圣物 - 文本RPG</title>
+    <style>
+        /* 深色森林主题 UI */
+        body {
+            background-color: #121612;
+            color: #e0e6e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, "Microsoft YaHei";
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .game-container {
+            width: 95%;
+            max-width: 650px;
+            background-color: #1b201b;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            border: 1px solid #2e3b2e;
+        }
+        h1 {
+            text-align: center;
+            color: #81c784;
+            margin-top: 0;
+            font-size: 24px;
+            border-bottom: 2px solid #2e3b2e;
+            padding-bottom: 12px;
+            letter-spacing: 2px;
+        }
+        /* 角色属性面板 */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            background-color: #141814;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            border: 1px solid #253025;
+        }
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .hp-bar-container {
+            width: 100px;
+            height: 10px;
+            background-color: #333;
+            border-radius: 5px;
+            overflow: hidden;
+            display: inline-block;
+        }
+        .hp-bar-fill {
+            height: 100%;
+            background-color: #e57373;
+            width: 100%;
+            transition: width 0.3s ease;
+        }
+        .gold-icon { color: #ffd54f; }
+        .bag-icon { color: #64b5f6; }
+        
+        /* 故事区域 */
+        #story-text {
+            font-size: 15px;
+            line-height: 1.8;
+            margin-bottom: 25px;
+            min-height: 160px;
+            white-space: pre-line;
+            color: #cfd8dc;
+        }
+        /* 选项按钮 */
+        .choices-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        button {
+            background-color: #242b24;
+            color: #e0e6e0;
+            border: 1px solid #4caf50;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+        }
+        button:hover {
+            background-color: #4caf50;
+            color: #121612;
+            font-weight: bold;
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>迷失森林：失落的圣物</h1>
+        
+        <!-- 属性面板 -->
+        <div class="status-bar">
+            <div class="status-item">
+                <span>❤️ 生命值:</span>
+                <div class="hp-bar-container">
+                    <div class="hp-bar-fill" id="hp-fill"></div>
+                </div>
+                <span id="hp-text">100/100</span>
+            </div>
+            <div class="status-item">
+                <span class="gold-icon">🪙 金币:</span>
+                <span id="gold-text">20</span>
+            </div>
+            <div class="status-item">
+                <span class="bag-icon">🎒 背包:</span>
+                <span id="inventory-text">无</span>
+            </div>
+        </div>
+
+        <div id="story-text">正在初始化冒险...</div>
+        <div class="choices-container" id="choices"></div>
+    </div>
+
+    <script>
+        // 初始化角色初始属性
+        let state = {
+            hp: 100,
+            gold: 20,
+            inventory: [],
+            boughtPotion: false,
+            merchantMsg: ""
+        };
+
+        const story = {
+            start: {
+                text: "作为远近闻名的冒险者，你接受了公会的委托，踏入这片被称为“诸神禁区”的迷雾森林，去寻找失落的黄金圣物。\n\n传闻森林深处潜伏着恐怖的巨兽，森林入口处分出了两条截然不同的危险道路，你决定从哪里突破？",
+                choices: [
+                    { text: "🧭 闯入【剧毒沼泽】（风险高，但可能有丰厚财宝）", next: "swamp_entry" },
+                    { text: "🧭 前往【古老石碑废墟】（可能有机关，需要智慧）", next: "ruins_entry" }
+                ]
+            },
+
+            // --- 剧毒沼泽支线 ---
+            swamp_entry: {
+                text: "你步入了泥泞的剧毒沼泽，空气中弥漫着刺鼻的绿色毒雾，脚下不时有诡异的藤蔓在蠕动。\n\n在沼泽中央，你发现了一个因冒险者遇难而遗落的【华丽宝箱】，但宝箱周围缠绕着带毒的荆棘藤蔓。",
+                choices: [
+                    { text: "⚔️ 硬闯带毒荆棘打开宝箱（失去 30 生命值，但可获得 50 金币）", next: "swamp_brute" },
+                    { text: "🔍 谨慎绕路，在周围安全区域寻找零散金币（无伤害，获得 15 金币）", next: "swamp_safe" }
+                ]
+            },
+            swamp_brute: {
+                text: "你忍受着剧毒荆棘刺穿皮肤的剧痛，强行扯碎藤蔓打开了宝箱！\n\n金灿灿的硬币让你忘记了伤痛，你成功拿到了大笔金币。稍作包扎后，你继续向森林核心挺进。",
+                action: () => { state.hp -= 30; state.gold += 50; },
+                choices: [{ text: "继续前进", next: "merchant" }]
+            },
+            swamp_safe: {
+                text: "你非常冷静，宁可慢一些也绝不冒险。你花费了大量时间绕开毒刺，在泥潭泥沙中仔细淘洗。\n\n虽然错过了大宝箱，但你也安全地捡到了几枚散落的旧帝国金币。稍作休整，你走向下一区域。",
+                action: () => { state.gold += 15; },
+                choices: [{ text: "继续前进", next: "merchant" }]
+            },
+
+            // --- 石碑废墟支线 ---
+            ruins_entry: {
+                text: "你来到了古老石碑废墟。两旁是断壁残垣，正前方的石壁上有一扇厚重的暗石门，旁边刻着一行闪烁微光的古代谜题：\n\n『早晨用四条腿走路，中午用两条腿走路，晚上用三条腿走路。这是什么？』",
+                choices: [
+                    { text: "🧠 回答：『人类』", next: "ruins_correct" },
+                    { text: "💥 尝试用蛮力撞开石门（失去 25 生命值，强行闯入）", next: "ruins_force" }
+                ]
+            },
+            ruins_correct: {
+                text: "随着你的回答，石壁上亮起绿色的微光，厚重的暗石门轰然升起。\n\n在暗室的石台上，你竟然发现了一把古朴的【神秘钥匙】！你将其收进背包，轻松通过了废墟。",
+                action: () => { state.inventory.push("神秘钥匙"); },
+                choices: [{ text: "继续前进", next: "merchant" }]
+            },
+            ruins_force: {
+                text: "你退后几步，狠狠地撞向早已风化皲裂的石门！\n\n“轰隆！”石门被撞碎了，但你的肩膀和肋骨也受到了剧烈震荡，疼得你龇牙咧嘴。好在门后还有几枚散落的祭祀金币。你揉着伤口继续前进。",
+                action: () => { state.hp -= 25; state.gold += 10; },
+                choices: [{ text: "继续前进", next: "merchant" }]
+            },
+
+            // --- 中途：流浪商人营地 ---
+            merchant: {
+                getText: () => {
+                    let msg = state.merchantMsg ? `${state.merchantMsg}\n\n` : "";
+                    return `${msg}在森林的转角处，你遇到了一位戴着兜帽的神秘流浪商人，他推着一辆堆满奇珍异宝的手推车。\n\n“哟，年轻的冒险家！前方神庙里可盘踞着一头凶猛的巨兽，不来我的店里买点防身装备吗？”`;
+                },
+                getChoices: () => {
+                    let choices = [];
+                    // 药水购买
+                    if (!state.boughtPotion) {
+                        choices.push({ 
+                            text: "🛒 购买【疗伤药水】(+50 生命值) - 消耗 20 金币", 
+                            action: () => {
+                                if (state.gold >= 20) {
+                                    state.gold -= 20;
+                                    state.hp = Math.min(100, state.hp + 50);
+                                    state.boughtPotion = true;
+                                    state.merchantMsg = "【系统提示】你购买并饮用了药水，生命值恢复了！";
+                                } else {
+                                    state.merchantMsg = "【流浪商人】“呵呵，小家伙，你的金币好像不够啊。”";
+                                }
+                            },
+                            next: "merchant" 
+                        });
+                    }
+                    // 长剑购买
+                    if (!state.inventory.includes("钢制长剑")) {
+                        choices.push({ 
+                            text: "🛒 购买【钢制长剑】(强力武器) - 消耗 30 金币", 
+                            action: () => {
+                                if (state.gold >= 30) {
+                                    state.gold -= 30;
+                                    state.inventory.push("钢制长剑");
+                                    state.merchantMsg = "【系统提示】你获得了【钢制长剑】并装备到了背上。";
+                                } else {
+                                    state.merchantMsg = "【流浪商人】“这把剑可是精钢打造，钱不够我可不卖。”";
+                                }
+                            },
+                            next: "merchant" 
+                        });
+                    }
+                    // 盾牌购买
+                    if (!state.inventory.includes("古朴盾牌")) {
+                        choices.push({ 
+                            text: "🛒 购买【古朴盾牌】(防具) - 消耗 20 金币", 
+                            action: () => {
+                                if (state.gold >= 20) {
+                                    state.gold -= 20;
+                                    state.inventory.push("古朴盾牌");
+                                    state.merchantMsg = "【系统提示】你获得了【古朴盾牌】。";
+                                } else {
+                                    state.merchantMsg = "【流浪商人】“防具虽好，也得先付钱哦。”";
+                                }
+                            },
+                            next: "merchant" 
+                        });
+                    }
+                    choices.push({ 
+                        text: "🚶 离开商店，直面最终神庙", 
+                        action: () => { state.merchantMsg = ""; },
+                        next: "core_area" 
+                    });
+                    return choices;
+                }
+            },
+
+            // --- 终点：神庙核心（Boss战） ---
+            core_area: {
+                text: "你终于踏入了古老神庙的废墟，黄金圣物就在中央的祭坛上闪闪发光！\n\n然而，祭坛前卧着一头长着双角的庞大凶兽——【地狱魔犬】。它猛地睁开血红色的双眼，咆哮着盯着你，口中滴落着具有腐蚀性的唾液。\n\n大战一触即发，你打算如何应对？",
+                getChoices: () => {
+                    let choices = [];
+                    // 选项1：如果有钥匙，可以直接开侧门绕过去
+                    if (state.inventory.includes("神秘钥匙")) {
+                        choices.push({ text: "🔑 使用【神秘钥匙】开启侧殿石门，悄悄绕过魔犬（无伤通关）", next: "victory_key" });
+                    }
+                    // 选项2：如果有长剑，可以直接战斗
+                    if (state.inventory.includes("钢制长剑")) {
+                        choices.push({ text: "⚔️ 拔出【钢制长剑】，正面迎战魔犬（承受 20 伤害，消灭怪物）", next: "victory_fight" });
+                    }
+                    // 选项3：如果有盾牌，可以防守反击
+                    if (state.inventory.includes("古朴盾牌")) {
+                        choices.push({ text: "🛡️ 举起【古朴盾牌】，强行冲向祭坛硬抢（盾牌损毁，承受 35 伤害）", next: "victory_shield" });
+                    }
+                    // 选项4：无道具或选择赤手空拳
+                    choices.push({ text: "🏃 赤手空拳肉搏搏一搏！（没有任何防具武器，承受 70 伤害）", next: "victory_luck" });
+                    
+                    return choices;
+                }
+            },
+
+            // --- 结局：胜利节点 ---
+            victory_key: {
+                text: "你轻手轻脚地走到侧殿，用【神秘钥匙】插进了锈蚀的锁孔。\n\n伴随着一声清脆的“咔哒”，暗道石门开启。你轻松绕过了魔犬，悄无声息地取走了祭坛上的黄金圣物！\n\n🎉 奇迹般的通关！你兵不血刃完成了冒险，成为了工会的传奇！",
+                choices: [{ text: "🎮 再玩一次", next: "restart" }]
+            },
+            victory_fight: {
+                text: "你大喝一声，抽出了背后的【钢制长剑】！\n\n魔犬狂吼着向你扑来，你侧身闪过它腥臭的巨口，长剑顺势斩落！虽然魔犬的利爪在你的手臂上抓出了几道血痕（生命值 -20），但你最终一剑将怪物击杀！\n\n🎉 凯旋通关！你拿起了黄金圣物，踏上了光荣的返航之路！",
+                action: () => { state.hp -= 20; },
+                choices: [{ text: "🎮 再玩一次", next: "restart" }]
+            },
+            victory_shield: {
+                text: "你举起【古朴盾牌】护在身前，拼尽全力朝祭坛冲锋！\n\n魔犬狠狠地撞在盾牌上，巨大的冲击力震得你口角溢血，盾牌也在魔犬的撕咬中彻底碎裂。不过，借着反冲力你成功滚到了祭坛前，一把抓起圣物，忍着浑身的酸痛拼命逃离了神庙（生命值 -35）！\n\n🎉 惊险通关！你凭借顽强的防御活了下来，并成功带回了圣物！",
+                action: () => { 
+                    state.hp -= 35; 
+                    state.inventory = state.inventory.filter(item => item !== "古朴盾牌"); // 盾牌损毁
+                },
+                choices: [{ text: "🎮 再玩一次", next: "restart" }]
+            },
+            victory_luck: {
+                text: "你没有任何可以依赖的武器和防具，只能红着眼硬着头皮往前冲！\n\n魔犬发现了你，疯狂地撕咬你的身体，将你按在地上疯狂撕扯。在极其惨烈的肉搏战中，你几乎付出了生命的代价（生命值 -70），才终于在垂死边缘挣脱怪物，一把抱住圣物，狼狈不堪地逃离了神庙！\n\n🎉 极限通关！你虽然身受重伤，但你那不要命的疯狂打法令魔犬都感到胆寒。你活下来了！",
+                action: () => { state.hp -= 70; },
+                choices: [{ text: "🎮 再玩一次", next: "restart" }]
+            },
+
+            // --- 死亡结局 ---
+            game_over_death: {
+                text: "💀 游戏结束：你的生命值归零了！\n\n在这片危机四伏的迷失森林中，你终究没能抵挡住危险的侵袭。你的骨骸成为了后来冒险者们的警示碑...",
+                choices: [{ text: "🔄 重新开始挑战", next: "restart" }]
+            }
+        };
+
+        // 更新顶部属性面板的 UI
+        function updateUI() {
+            // 限制 HP 显示在 0 到 100 之间
+            const currentHp = Math.max(0, state.hp);
+            document.getElementById('hp-text').innerText = `${currentHp}/100`;
+            document.getElementById('hp-fill').style.width = `${currentHp}%`;
+            document.getElementById('gold-text').innerText = state.gold;
+            document.getElementById('inventory-text').innerText = state.inventory.length > 0 ? state.inventory.join(', ') : '无';
+        }
+
+        // 渲染剧情节点
+        function showNode(nodeKey) {
+            // 重置游戏状态
+            if (nodeKey === 'restart') {
+                state = {
+                    hp: 100,
+                    gold: 20,
+                    inventory: [],
+                    boughtPotion: false,
+                    merchantMsg: ""
+                };
+                nodeKey = 'start';
+            }
+
+            // 在渲染具体节点前，优先执行该节点的数值结算逻辑（如扣血或得金币）
+            const node = story[nodeKey];
+            if (node.action) {
+                node.action();
+            }
+
+            // 数值结算后，检测生命值是否已经归零
+            if (state.hp <= 0 && nodeKey !== 'game_over_death') {
+                showNode('game_over_death');
+                return;
+            }
+
+            // 更新 UI 面板数据
+            updateUI();
+
+            // 动态渲染文本（处理有 getText 函数的情况）
+            const storyText = node.getText ? node.getText() : node.text;
+            document.getElementById('story-text').innerText = storyText;
+
+            // 动态渲染选项按钮（处理有 getChoices 函数的情况）
+            const choicesContainer = document.getElementById('choices');
+            choicesContainer.innerHTML = '';
+
+            const currentChoices = node.getChoices ? node.getChoices() : node.choices;
+            currentChoices.forEach(choice => {
+                const button = document.createElement('button');
+                button.innerText = choice.text;
+                button.onclick = () => {
+                    // 如果选项中包含购买或特殊立即执行的动作，先触发动作
+                    if (choice.action) {
+                        choice.action();
+                    }
+                    showNode(choice.next);
+                };
+                choicesContainer.appendChild(button);
+            });
+        }
+
+        // 启动游戏
+        showNode('start');
+    </script>
+</body>
+</html>
