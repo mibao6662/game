@@ -13,9 +13,9 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            overflow: hidden;
+            overflow-x: hidden;
         }
         .game-layout {
             display: grid;
@@ -133,6 +133,65 @@
             font-size: 12px;
             overflow-y: auto;
             color: #a0baa0;
+        }
+
+        /* ================= 📱 移动端响应式适配 (CSS Media Query) ================= */
+        @media (max-width: 768px) {
+            body {
+                align-items: flex-start;
+                padding: 10px 0;
+                overflow-y: auto; /* 允许手机整页上下滚动 */
+            }
+            .game-layout {
+                grid-template-columns: 1fr; /* 单列布局 */
+                height: auto;
+                width: 95%;
+                gap: 15px;
+            }
+            /* 重构属性栏：改为紧凑的两列网格布局，省出高度空间给主视窗 */
+            .sidebar {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px 15px;
+                padding: 12px 15px;
+            }
+            .panel-title {
+                grid-column: span 2;
+                margin-bottom: 0;
+                font-size: 15px;
+                padding-bottom: 4px;
+            }
+            .stat-row {
+                font-size: 12px;
+                gap: 2px;
+            }
+            /* 让背包在手机端独占一行，显示更多文字 */
+            .sidebar .stat-row:last-child {
+                grid-column: span 2;
+            }
+            #bag-list {
+                margin-top: 2px;
+                padding: 6px;
+                min-height: auto;
+            }
+            
+            .main-window {
+                padding: 15px;
+                height: auto;
+                min-height: 480px; /* 确保操作区域有足够的高度 */
+            }
+            #game-screen {
+                font-size: 14px;
+                min-height: 180px;
+            }
+            button {
+                padding: 10px 14px;
+                font-size: 14px;
+            }
+            .console-log {
+                height: 90px;
+                font-size: 11px;
+            }
         }
     </style>
 </head>
@@ -640,7 +699,7 @@
             playSound('heal');
             log("🔑 你将神秘钥匙插入了主殿一侧隐藏的小神龛中，地面的暗门悄然翻开。", '#81c784');
             const text = `🎉 【智取圣物：悄然逃脱】
-            你通过狭窄的地下密道无声无息地绕过了狂怒咆哮的三头魔犬，将祭坛正中央沉睡的黄金圣物黄金圣徽揽入怀中，并在它发觉之前顺着密道顺利撤离！
+            你通过狭窄的地下密道无声无息地绕过了狂怒咆哮常年盘踞的三头魔犬，将祭坛正中央沉睡的黄金圣徽揽入怀中，并在它发觉之前顺着密道顺利撤离！
             
             你没有耗费一丝体力，便安全带回了行会失落已久的国宝。`;
             const choices = [{ text: "🎮 重新开启新的一轮挑战", action: () => { playSound('click'); showNode('restart'); } }];
